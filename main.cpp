@@ -126,10 +126,10 @@ void EmulateGame(int size, int rank, bool* full_matrix, int size_y, int size_x) 
         MPI_Request top_send_req, bot_send_req;
         MPI_Request top_rec_req, bot_rec_req;
 
-        MPI_Isend(my_matrix, size_x, MPI_C_BOOL, neighbour_top, 0, MPI_COMM_WORLD, &top_send_req);
+        MPI_Isend(my_matrix, size_x, MPI_C_BOOL, neighbour_top, 1, MPI_COMM_WORLD, &top_send_req);
         MPI_Isend(my_matrix + counts[rank] - size_x, size_x, MPI_C_BOOL, neighbour_bot, 0, MPI_COMM_WORLD, &bot_send_req);
         MPI_Irecv(matrix, size_x, MPI_C_BOOL, neighbour_top, 0, MPI_COMM_WORLD, &top_rec_req);
-        MPI_Irecv(my_matrix + counts[rank], size_x, MPI_C_BOOL, neighbour_bot, 0, MPI_COMM_WORLD, &bot_rec_req);
+        MPI_Irecv(my_matrix + counts[rank], size_x, MPI_C_BOOL, neighbour_bot, 1, MPI_COMM_WORLD, &bot_rec_req);
 
         // Check
         bool* stop_vector;
@@ -155,23 +155,14 @@ void EmulateGame(int size, int rank, bool* full_matrix, int size_y, int size_x) 
         MPI_Wait(&bot_rec_req, MPI_STATUSES_IGNORE);
         CalcNext(3, size_x, my_matrix + (my_rows - 2) * size_x, my_next_matrix + (my_rows - 2) * size_x);
 
-        if (rank == 0) {
-            printf("\niteration: %d; matrix\n", iteration);
-            PrintMatrix(matrix, my_rows + 2, size_x);
-
-            printf("\niteration: %d; next_matrix\n", iteration);
-            PrintMatrix(next_matrix, my_rows + 2, size_x);
-        }
-
         // Switch main matrix -- next iteration
         matrix = next_matrix;
         my_matrix = my_next_matrix;
     }
     if (rank == 0) {
-        printf("Result:\niterations: %d\n", iteration - 1);
+        printf("cycle after %d iterations\n", iteration - 1);
     }
 
-    int iter = 0;
     for (bool* matrixDump : prev_states) {
         delete[] (matrixDump);
     }
